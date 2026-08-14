@@ -321,9 +321,17 @@ if(PLATFORM STREQUAL "desktop")
         target_include_directories(butterscotch PRIVATE ${SDL3_INCLUDE_DIRS})
         target_link_directories(butterscotch PRIVATE ${SDL3_LIBRARY_DIRS})
         set(BACKEND_LIBRARIES ${SDL3_LIBRARIES})
+    elseif(DESKTOP_BACKEND STREQUAL "appkit")
+        add_compile_definitions(USE_APPKIT)
+        target_compile_definitions(butterscotch PRIVATE GL_SILENCE_DEPRECATION)
+        set(BACKEND_LIBRARIES "-framework Cocoa" "-framework GameController")
     endif()
     target_link_libraries(butterscotch PRIVATE ${BACKEND_LIBRARIES} ${AUDIO_LIBRARIES} ${PLATFORM_LIBRARIES})
-    target_sources(butterscotch PRIVATE src/desktop/backends/${DESKTOP_BACKEND}.c)
+    if(DESKTOP_BACKEND STREQUAL "appkit")
+        target_sources(butterscotch PRIVATE src/desktop/backends/${DESKTOP_BACKEND}.m)
+    else()
+        target_sources(butterscotch PRIVATE src/desktop/backends/${DESKTOP_BACKEND}.c)
+    endif()
 
     # Enable AddressSanitizer by default in Debug builds
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -707,7 +715,7 @@ elseif(PLATFORM STREQUAL "ps3")
     target_link_libraries(mojoal PUBLIC ${SDL2_LIBRARIES})
     target_link_libraries(butterscotch PRIVATE ${SDL2_LIBRARIES} m gcm_sys rsx sysutil io audio rt lv2 io audio bzip2 stb_ds sha1 ps3gl mojoal stb_vorbis)
 elseif(PLATFORM STREQUAL "vita")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always -g -Wall -O3 -mfloat-abi=hard -mtune=cortex-a9 -mfpu=neon -ffast-math")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always -g -Wl,-q,--allow-multiple-definition -Wall -O3 -mfloat-abi=hard -mtune=cortex-a9 -mfpu=neon -ffast-math")
     set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always -Wno-write-strings -std=c++11")
 
     # Normally, __VITA__ should already be defined, but for some reason,
@@ -776,6 +784,8 @@ elseif(PLATFORM STREQUAL "vita")
         SceVshBridge_stub
         SceAvPlayer_stub
         SceNpTrophy_stub
+        SceRazorCapture_stub
+        SceRazorHud_stub
     )
 
     vita_create_self(eboot.bin butterscotch UNSAFE)
