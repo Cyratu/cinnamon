@@ -684,4 +684,37 @@ jobs:
       - name: Build
         run: make CC='ccache g++ -std=gnu++98 -Wall -Wvla -Werror' NO_COLOR=1 VERBOSE=1
 
-#hi
+name: Build Wii U WUHB
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-wiiu:
+    runs-name: Build Wii U Binary
+    runs-on: ubuntu-latest
+    container: devkitpro/devkitpcc:latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Wii U Toolchain
+        run: |
+          dkp-pacman -Syu --noconfirm
+          dkp-pacman -S wiiu-dev --noconfirm
+
+      - name: Compile Game
+        run: |
+          export PATH=$DEVKITPRO/devkitPPC/bin:$PATH
+          make -f Makefile.wiiu
+
+      - name: Upload WUHB Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wiiu-wuhb-file
+          path: |
+            *.wuhb
+            *.rpx
